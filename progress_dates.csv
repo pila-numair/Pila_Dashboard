@@ -1,0 +1,15 @@
+dates,percent,progress
+'2021-01-01',10,planned
+'2021-02-01',26,planned
+'2021-04-01',35,planned
+'2021-06-01',53,planned
+'2021-08-01',68,planned
+'2021-10-01',86,planned
+'2021-12-01',100,planned
+'2021-01-01',8,actual
+'2021-02-01',20,actual
+'2021-03-01',35,actual
+'2021-05-01',50,actual
+'2021-08-01',75,actual
+'2021-10-01',93,actual
+'2021-12-01',100,actual

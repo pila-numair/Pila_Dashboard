@@ -7,8 +7,10 @@ from dash.dependencies import Input, Output, State
 import pandas as pd
 import calendar
 import cards as crd
+import plotly.express as px
+import plotly.graph_objs as go
 
-app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash()
 
 navbar = dbc.NavbarSimple(
     children=[
@@ -51,7 +53,6 @@ x = list(divide_chunks(b, 7))
 df = pd.DataFrame(x, columns=['Monday', "Tuesday", "Wednesday", "Thursday", "Friday", "Saturdaty",
                               "Sunday"])  # month calendar
 df[df.eq(0)] = ''
-
 
 card_calendar = dbc.Card(
     [
@@ -178,6 +179,7 @@ def toggle_sidebar(n, nclick):
 
     return sidebar_style, content_style, cur_nclick
 
+
 # this callback uses the current pathname to set the active state of the
 # corresponding nav link to true, allowing users to tell see page they are on
 @app.callback(
@@ -201,46 +203,52 @@ def render_page_content(pathname):
         }
 
         return html.Div([
-    html.H3("Calendar Dashboard", style={'textAlign': 'center'}),
-    dbc.Row([dbc.Col(card_calendar, width=5),
+            html.H3("Calendar Dashboard", style={'textAlign': 'center'}),
+            dbc.Row([dbc.Col(card_calendar, width=5),
 
-             html.Div([
+                     html.Div([
 
-                 html.Br(),
-                 html.Label(['Choose Month'], style={'font-weight': 'bold', "text-align": "center"}),
-                 dcc.Dropdown(id='cuisine_one',
-                              options=[{'label': x, 'value': x} for x in ['January', 'February', 'March']],
-                              value='January',
-                              multi=False,
-                              disabled=False,
-                              clearable=True,
-                              searchable=True,
-                              placeholder='Choose Month.',
-                              className='form-dropdown',
-                              style={'width': "90%"},
-                              persistence='string',
-                              persistence_type='memory'),
+                         html.Br(),
+                         html.Label(['Choose Month'], style={'font-weight': 'bold', "text-align": "center"}),
+                         dcc.Dropdown(id='cuisine_one',
+                                      options=[{'label': x, 'value': x} for x in ['January', 'February', 'March']],
+                                      value='January',
+                                      multi=False,
+                                      disabled=False,
+                                      clearable=True,
+                                      searchable=True,
+                                      placeholder='Choose Month.',
+                                      className='form-dropdown',
+                                      style={'width': "90%"},
+                                      persistence='string',
+                                      persistence_type='memory'),
 
-                 dcc.Dropdown(id='cuisine_two',
-                              options=[{'label': x, 'value': x} for x in [2021, 2022, 2023, 2024]],
-                              value='2021',
-                              multi=False,
-                              clearable=False,
-                              persistence='string',
-                              persistence_type='session'),
+                         dcc.Dropdown(id='cuisine_two',
+                                      options=[{'label': x, 'value': x} for x in [2021, 2022, 2023, 2024]],
+                                      value='2021',
+                                      multi=False,
+                                      clearable=False,
+                                      persistence='string',
+                                      persistence_type='session'),
 
-             ], className='three columns'),
+                     ], className='three columns'),
 
-             dbc.Col(html.Div(id='output_div'), width=3),
+                     dbc.Col(html.Div(id='output_div'), width=3),
 
-             ], justify="around"),
+                     ], justify="around"),
 
-])
+        ])
     elif pathname == "/page-2":
         colors = {
             'background': '#FFFFFF',
             'text': '#7FDBFF'
         }
+
+        labels = ['Pending Task', 'Completed Tasks', 'Upcomming Tasks']
+        values = [4, 7, 10]
+
+        pie_fig = go.Figure(data=[go.Pie(labels=labels, values=values)])
+
 
         return html.Div(style={'backgroundColor': colors['background']}, children=[
             html.H3("Task Overview", style={'textAlign': 'center'}),
@@ -249,10 +257,33 @@ def render_page_content(pathname):
                      dbc.Col(crd.card_maker("Pending/Upcomming Tasks", "14", "danger"), width="auto"),
 
                      ], justify="around"),
+            dcc.Graph(figure=pie_fig),
 
         ])
     elif pathname == "/page-3":
-        return html.P("Oh cool, this is page 3!")
+        df = pd.DataFrame([
+            dict(Task="Make List", Start='2021-01-01', Finish='2021-02-28', Completion_pct=100),
+            dict(Task="Buy Products", Start='2021-03-05', Finish='2021-04-15', Completion_pct=55),
+            dict(Task="Sell Products", Start='2021-02-20', Finish='2021-05-30', Completion_pct=25)
+        ])
+
+        fig = px.timeline(df, x_start="Start", x_end="Finish", y="Task", color="Completion_pct")
+        fig.update_yaxes(autorange="reversed")
+
+        df = pd.read_csv("progress_dates.csv")
+        df['dates']= pd.to_datetime(df['dates'])
+        fig2 = px.line(df, x='dates', y='percent', color='progress')
+        fig3 = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=70,
+            domain={'x': [0, 1], 'y': [0, 1]},
+            title={'text': " Completion Progress"}))
+        return html.Div([html.H3('Ghatt chart'),dcc.Graph(figure=fig),html.H3('work flow'),
+                        dbc.Row([
+                            dbc.Col(dcc.Graph(id='example-graph-2',figure=fig2)),
+                            dbc.Col(dcc.Graph(id='example-graph-3',figure=fig3))
+                        ])
+                        ,])
     # If the user tries to reach a different page, return a 404 message
     return dbc.Jumbotron(
         [
@@ -275,6 +306,7 @@ def getActiveCell(active_cell, data):
         cellData = data[row][col]
         return html.P(f'row: {row}, col: {col}, value: {cellData}')
     return html.P('Please Select a Date')
+
 
 if __name__ == "__main__":
     app.run_server()
