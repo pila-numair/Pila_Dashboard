@@ -9,7 +9,7 @@ import calendar
 import cards as crd
 import plotly.express as px
 import plotly.graph_objs as go
-
+import kanban_List as kb
 app = dash.Dash()
 
 navbar = dbc.NavbarSimple(
@@ -20,6 +20,7 @@ navbar = dbc.NavbarSimple(
                 dbc.DropdownMenuItem("More pages", header=True),
                 dbc.DropdownMenuItem("Page 2", href="#"),
                 dbc.DropdownMenuItem("Page 3", href="#"),
+                dbc.DropdownMenuItem("Page 4", href="#"),
             ],
             nav=True,
             in_navbar=True,
@@ -49,7 +50,63 @@ def task_card(index_i):
         ])
     )
 
-df=pd.read_excel('tasks1.xlsx')
+def kanban_task_card(index_i, _value, _status,dfy):
+    return dbc.Card(
+        dbc.CardBody([
+            html.H5(dfy['to_do_task'].iloc[index_i], className='card-title'),
+        ])
+    )
+
+
+
+df = pd.read_excel('tasks1.xlsx')
+
+
+def kanban_list(_value, _status):  # _value is(urgent,imp,normal) and _status is (to do,progress,done)
+    _v=_value
+    _s=_status
+    dfx=pd.read_excel('tasks1.xlsx')
+    dfx = dfx[dfx['_status'] == _status]
+    dfx = dfx[dfx['_value'] == _value]
+    print(len(dfx['to_do_task']))
+    return dbc.ListGroup([
+        html.Div(children=[
+            kanban_task_card(i, _v, _s,dfx) for i in range(len(dfx['to_do_task']))
+        ])
+    ])
+
+
+
+
+
+def employee_card(i_index):
+    df2 = pd.read_excel("Employee_Book.xlsx")
+    return dbc.Card([
+
+        dbc.CardBody(children=[
+            dbc.CardImg(src=app.get_asset_url(df2['img_loc'][i_index]), style={'display': 'block',
+                                                                       'margin-left':'auto',
+                                                                       'margin-right':'auto',
+                                                                      'width': '100px',
+                                                                      'height': '100px'}, top=True),
+            html.H5(df2['employee_name'][i_index], className="card-text", style={"text-align": "center"}),
+            html.Br(),
+            html.P(df2['e_designation'][i_index], style={"text-align": "center"}),
+            dbc.Button("View More"),
+        ]
+
+        ),
+    ])
+
+
+df3 = pd.read_excel("Employee_Book.xlsx")
+
+employee_card_list = dbc.CardColumns(children=[
+        employee_card(i) for i in range(len(df3['employee_name']))
+    ])
+
+
+
 card_list= dbc.ListGroup([
     dbc.ListGroupItem(children=[
         task_card(i) for i in range(len(df['to_do_task']))
@@ -142,9 +199,10 @@ sidebar = html.Div(
         ),
         dbc.Nav(
             [
-                dbc.NavLink("Page 1", href="/page-1", id="page-1-link"),
-                dbc.NavLink("Page 2", href="/page-2", id="page-2-link"),
+                dbc.NavLink("Landing Page", href="/page-1", id="page-1-link"),
+                dbc.NavLink("Kanban Board", href="/page-2", id="page-2-link"),
                 dbc.NavLink("Page 3", href="/page-3", id="page-3-link"),
+                dbc.NavLink("Employees", href="/page-4", id="page-4-link"),
             ],
             vertical=True,
             pills=True,
@@ -203,14 +261,14 @@ def toggle_sidebar(n, nclick):
 # this callback uses the current pathname to set the active state of the
 # corresponding nav link to true, allowing users to tell see page they are on
 @app.callback(
-    [Output(f"page-{i}-link", "active") for i in range(1, 4)],
+    [Output(f"page-{i}-link", "active") for i in range(1, 5)],
     [Input("url", "pathname")],
 )
 def toggle_active_links(pathname):
     if pathname == "/":
         # Treat page 1 as the homepage / index
         return True, False, False
-    return [pathname == f"/page-{i}" for i in range(1, 4)]
+    return [pathname == f"/page-{i}" for i in range(1, 5)]
 
 
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
@@ -223,70 +281,64 @@ def render_page_content(pathname):
         }
 
         return html.Div([
-            html.H3("Calendar Dashboard", style={'textAlign': 'center'}),
+            html.H1("Numair's Tasks", style={'textAlign': 'center'}),
             dbc.Row([
                 dbc.Col([
-                    html.H3("Numair's Tasks"),
+                    html.H5("Task List"),
                     html.Div(card_list, style={'height': '750px', 'overflow': 'scroll'}),
                 ],
                         width=3),
-                dbc.Col(card_calendar, width=5),
-
-                     html.Div([
-
-                         html.Br(),
-                         html.Label(['Choose Month'], style={'font-weight': 'bold', "text-align": "center"}),
-                         dcc.Dropdown(id='cuisine_one',
-                                      options=[{'label': x, 'value': x} for x in ['January', 'February', 'March']],
-                                      value='January',
-                                      multi=False,
-                                      disabled=False,
-                                      clearable=True,
-                                      searchable=True,
-                                      placeholder='Choose Month.',
-                                      className='form-dropdown',
-                                      style={'width': "90%"},
-                                      persistence='string',
-                                      persistence_type='memory'),
-
-                         dcc.Dropdown(id='cuisine_two',
-                                      options=[{'label': x, 'value': x} for x in [2021, 2022, 2023, 2024]],
-                                      value='2021',
-                                      multi=False,
-                                      clearable=False,
-                                      persistence='string',
-                                      persistence_type='session'),
-
-                     ], className='three columns'),
-
-                     dbc.Col(html.Div(id='output_div'), width=3),
+                dbc.Col([html.H5("Task Details"),
+                         dbc.ListGroup([
+                             dbc.ListGroupItem(html.H3("Your Task Name"),style={'textAlign': 'left'}),
+                             dbc.ListGroupItem(html.H5("25-March-2021"),style={'textAlign': 'left'}),
+                             dbc.ListGroupItem(html.P("Here Are the details of the selected task of employee.More details can be displayed here"),style={'textAlign': 'left'}),
+                         ])
+                         ],style={'textAlign': 'left'}, align="start",width=8),
 
 
-                     ], justify="around"),
+                     #dbc.Col(html.Div(id='output_div'), width=3),      this line for uderstanding callback I/O
+
+
+                     ], no_gutters=True),
 
         ])
+
     elif pathname == "/page-2":
-        colors = {
-            'background': '#FFFFFF',
-            'text': '#7FDBFF'
-        }
+        return html.Div([
+            dbc.Row(children=[
+                dbc.Col(html.H3('Kanban Board',style={"color":"red"})),
+                dbc.Col(html.H3('To Do')),
+                dbc.Col(html.H3('In Progress')),
+                dbc.Col(html.H3('Done')),
 
-        labels = ['Pending Task', 'Completed Tasks', 'Upcomming Tasks']
-        values = [4, 7, 10]
-
-        pie_fig = go.Figure(data=[go.Pie(labels=labels, values=values)])
-
-
-        return html.Div(style={'backgroundColor': colors['background']}, children=[
-            html.H3("Task Overview", style={'textAlign': 'center'}),
-            dbc.Row([dbc.Col(crd.card_maker("Total Tasks", "21", "warning"), width="auto"),
-                     dbc.Col(crd.card_maker("Completed Tasks", "7", "success"), width="auto"),
-                     dbc.Col(crd.card_maker("Pending/Upcomming Tasks", "14", "danger"), width="auto"),
-
-                     ], justify="around"),
-            dcc.Graph(figure=pie_fig),
-
-        ])
+            ]),
+            dbc.Row(children=[
+                dbc.Col(html.H3("Urgent")),
+                dbc.Col(kanban_list("urgent", "to do")),
+                # these 2 arguments has to be column name from tasks1.xlsx table
+                dbc.Col(kanban_list("urgent", "in progress")),
+                # these 2 arguments has to be column name from tasks1.xlsx table
+                dbc.Col(kanban_list("urgent", "done"))  # these 2 arguments has to be column name from tasks1.xlsx table
+            ],style={"color":"blue"}),
+            dbc.Row(children=[
+                dbc.Col(html.H3("Important")),
+                dbc.Col(kanban_list("important", "to do")),
+                # these 2 arguments has to be column name from tasks1.xlsx table
+                dbc.Col(kanban_list("important", "in progress")),
+                # these 2 arguments has to be column name from tasks1.xlsx table
+                dbc.Col(kanban_list("important", "done"))
+                # these 2 arguments has to be column name from tasks1.xlsx table
+            ],style={"color":"green"}),
+            dbc.Row(children=[
+                dbc.Col(html.H3("Normal")),
+                dbc.Col(kanban_list("normal", "in progress")),
+                # these 2 arguments has to be column name from tasks1.xlsx table
+                dbc.Col(kanban_list("normal", "to do")),
+                # these 2 arguments has to be column name from tasks1.xlsx table
+                dbc.Col(kanban_list("normal", "done"))  # these 2 arguments has to be column name from tasks1.xlsx table
+            ],style={"color":"orange"}),
+        ],style={"border-style":"solid","border":"1px solid black"})
     elif pathname == "/page-3":
         df = pd.DataFrame([
             dict(Task="Make List", Start='2021-01-01', Finish='2021-02-28', Completion_pct=100),
@@ -311,6 +363,9 @@ def render_page_content(pathname):
                             dbc.Col(dcc.Graph(id='example-graph-3',figure=fig3))
                         ])
                         ,])
+    elif pathname == "/page-4":
+        return html.Div([html.H1("Employees", style={'text-align': 'center'}),
+                         employee_card_list], style={'height': '750px', 'overflow': 'scroll'})
     # If the user tries to reach a different page, return a 404 message
     return dbc.Jumbotron(
         [

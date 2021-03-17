@@ -106,4 +106,4 @@ def getActiveCell(active_cell, data):
     return html.P('Please Select a Date')
 
 
-app.run_server()
+app.run_server(port=1287)
